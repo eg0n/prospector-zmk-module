@@ -55,6 +55,14 @@ config PWM
 config LED
     default y
 
+# Hand the panel backlight to ZMK so it can be driven from a keymap with
+# &bl BL_TOG / BL_INC / BL_DEC, and blanked on idle.
+config ZMK_BACKLIGHT
+    default y
+
+config ZMK_BACKLIGHT_AUTO_OFF_IDLE
+    default y
+
 config PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
     select SENSOR
     select APDS9960

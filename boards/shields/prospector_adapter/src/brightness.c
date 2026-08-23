@@ -5,11 +5,11 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/sys/printk.h>
 
+#include <zmk/backlight.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(als, 4);
 
-static const struct device *pwm_leds_dev = DEVICE_DT_GET_ONE(pwm_leds);
-#define DISP_BL DT_NODE_CHILD_IDX(DT_NODELABEL(disp_bl))
 
 #ifdef CONFIG_PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
 
@@ -57,7 +57,7 @@ uint8_t bl_fade(uint8_t source, uint8_t target) {
     while ((increasing && current_brightness < target) ||
            (!increasing && current_brightness > target)) {
 
-        if (led_set_brightness(pwm_leds_dev, DISP_BL, current_brightness)) {
+        if (zmk_backlight_set_brt(current_brightness)) {
             LOG_ERR("Failed to set brightness");
         }
 
@@ -96,6 +96,13 @@ extern void als_thread(void *d0, void *d1, void *d2) {
 
         k_msleep(NORMAL_SAMPLE_SLEEP_MS);
 
+        /* The user can turn the display off with &bl BL_TOG. Leave it off:
+         * zmk_backlight_set_brt() sets state.on = (brightness > 0), so
+         * adjusting here would switch the panel straight back on. Brightness
+         * is re-applied on the next sample after it is toggled back on. */
+        if (!zmk_backlight_is_on()) {
+            continue;
+        }
 
         if (sensor_sample_fetch(dev)) {
             LOG_ERR("sensor_sample fetch failed\n");
@@ -148,7 +155,7 @@ K_THREAD_DEFINE(als_tid, 1024, als_thread, NULL, NULL, NULL, K_LOWEST_APPLICATIO
 #else
 
 static int init_fixed_brightness(void) {
-    led_set_brightness(pwm_leds_dev, DISP_BL, CONFIG_PROSPECTOR_FIXED_BRIGHTNESS);
+    zmk_backlight_set_brt(CONFIG_PROSPECTOR_FIXED_BRIGHTNESS);
 
     return 0;
 }

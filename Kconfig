@@ -24,6 +24,15 @@ config PROSPECTOR_STATUS_SCREEN_OPERATOR
 
 endchoice
 
+config PROSPECTOR_PROVIDE_CAPS_WORD_EVENT
+    bool "Provide the caps-word state changed event"
+    default y
+    help
+      Upstream ZMK has no caps-word event, so this module supplies one.
+      Set to n if your ZMK tree already defines
+      zmk_caps_word_state_changed -- otherwise the two definitions collide
+      at link time.
+
 config PROSPECTOR_ROTATE_DISPLAY_180
     bool "Rotate the display 180 degrees"
     default n
