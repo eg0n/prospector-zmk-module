@@ -57,6 +57,14 @@ uint8_t bl_fade(uint8_t source, uint8_t target) {
     while ((increasing && current_brightness < target) ||
            (!increasing && current_brightness > target)) {
 
+        /* Abandon the fade if the display went off underneath us (idle
+         * auto-off, or &bl BL_TOG). Writing a brightness here would set
+         * state.on back to true, and because the activity state is already
+         * idle no further event would arrive to switch it off again. */
+        if (!zmk_backlight_is_on()) {
+            return 0;
+        }
+
         if (zmk_backlight_set_brt(current_brightness)) {
             LOG_ERR("Failed to set brightness");
         }
@@ -122,6 +130,10 @@ extern void als_thread(void *d0, void *d1, void *d2) {
 
             for (int i = 0; i < BURST_SAMPLE_TIMEOUT; i++) {
                 k_msleep(BURST_SAMPLE_SLEEP_MS);
+
+                if (!zmk_backlight_is_on()) {
+                    break;
+                }
 
                 if (sensor_sample_fetch(dev)) {
                     LOG_ERR("sensor_sample fetch failed\n");
