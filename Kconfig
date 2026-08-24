@@ -22,6 +22,12 @@ config PROSPECTOR_STATUS_SCREEN_OPERATOR
     help
         Technical and information dense layout
 
+config PROSPECTOR_STATUS_SCREEN_CRYSTAL
+    bool "Crystal layout"
+    help
+        Pixel-font layout with a modifier grid and an animated crystal,
+        ported from zmk-dongle-screen
+
 endchoice
 
 config PROSPECTOR_PROVIDE_CAPS_WORD_EVENT

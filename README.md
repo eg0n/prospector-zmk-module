@@ -71,7 +71,34 @@ Classic is used by default. To choose a different screen, add one of the followi
 CONFIG_PROSPECTOR_STATUS_SCREEN_RADII=y
 CONFIG_PROSPECTOR_STATUS_SCREEN_FIELD=y
 CONFIG_PROSPECTOR_STATUS_SCREEN_OPERATOR=y
+CONFIG_PROSPECTOR_STATUS_SCREEN_CRYSTAL=y
 ```
+
+### Crystal
+
+A pixel-font layout ported from [zmk-dongle-screen][dongle-screen]: WPM top left,
+connection top right, a five-key modifier grid on the left with caps-word and
+caps-lock indication, an animated crystal on the right, peripheral batteries
+bottom left and the active layer bottom right.
+
+Each widget can be turned off individually, and the animation is configurable:
+
+| Name | Description | Default |
+| ---- | ----------- | ------- |
+| `CONFIG_PROSPECTOR_CRYSTAL_WPM_ACTIVE` | Show the WPM counter | y |
+| `CONFIG_PROSPECTOR_CRYSTAL_CONNECTION_ACTIVE` | Show the connection widget | y |
+| `CONFIG_PROSPECTOR_CRYSTAL_MODIFIER_ACTIVE` | Show the modifier grid | y |
+| `CONFIG_PROSPECTOR_CRYSTAL_BATTERY_ACTIVE` | Show peripheral battery levels | y |
+| `CONFIG_PROSPECTOR_CRYSTAL_LAYER_ACTIVE` | Show the active layer | y |
+| `CONFIG_PROSPECTOR_CRYSTAL_SHOW_DONGLE_BATTERY` | Also show the dongle's own battery | n |
+| `CONFIG_PROSPECTOR_CRYSTAL_ANIMATION_ACTIVE` | Show the animated crystal | y |
+| `CONFIG_PROSPECTOR_CRYSTAL_ANIMATION_INVERTED` | Invert the animation colours | y |
+| `CONFIG_PROSPECTOR_CRYSTAL_ANIMATION_MS` | Duration of one 16-frame cycle, ms | 4800 |
+
+This layout is the heaviest on RAM of the five; if you add to it, see the
+[RAM overflow](#ram-overflow-error) note below.
+
+[dongle-screen]: https://github.com/janpfischer/zmk-dongle-screen
 
 ## Usage
 

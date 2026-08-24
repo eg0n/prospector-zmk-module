@@ -1,0 +1,56 @@
+if PROSPECTOR_STATUS_SCREEN_CRYSTAL
+
+config ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+    select LV_USE_LABEL
+    select LV_USE_IMG
+    select LV_USE_CANVAS
+    select LV_USE_ANIMIMG
+    select LV_USE_ANIMATION
+    select LV_USE_LINE
+    select LV_USE_GRID
+    select ZMK_WPM
+    imply ZMK_HID_INDICATORS
+
+config PROSPECTOR_CRYSTAL_WPM_ACTIVE
+    bool "Crystal: show the WPM counter"
+    default y
+
+config PROSPECTOR_CRYSTAL_CONNECTION_ACTIVE
+    bool "Crystal: show the connection widget"
+    default y
+
+config PROSPECTOR_CRYSTAL_MODIFIER_ACTIVE
+    bool "Crystal: show the modifier grid"
+    default y
+
+config PROSPECTOR_CRYSTAL_BATTERY_ACTIVE
+    bool "Crystal: show peripheral battery levels"
+    default y
+
+config PROSPECTOR_CRYSTAL_LAYER_ACTIVE
+    bool "Crystal: show the active layer"
+    default y
+
+config PROSPECTOR_CRYSTAL_SHOW_DONGLE_BATTERY
+    bool "Crystal: also show the dongle's own battery"
+    default n
+    help
+      The dongle is usually USB powered and has no cell to report, so this is
+      off by default. Enabling it adds a slot ahead of the peripherals.
+
+config PROSPECTOR_CRYSTAL_ANIMATION_ACTIVE
+    bool "Crystal: show the animated crystal"
+    default y
+
+config PROSPECTOR_CRYSTAL_ANIMATION_INVERTED
+    bool "Crystal: invert the animation colours"
+    default y
+
+config PROSPECTOR_CRYSTAL_ANIMATION_MS
+    int "Crystal: animation duration in milliseconds"
+    default 4800
+    range 200 60000
+    help
+      Time for one full 16-frame cycle of the crystal animation.
+
+endif
