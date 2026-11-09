@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 
 #include <zmk/event_manager.h>
-#include <zmk/events/split_central_status_changed.h>
+#include <zmk/prospector/peripheral_status.h>
 #include <zmk_split_esb/events/peripheral_link_changed.h>
 
 static int esb_link_listener(const zmk_event_t *eh) {
@@ -18,10 +18,7 @@ static int esb_link_listener(const zmk_event_t *eh) {
         as_zmk_split_esb_peripheral_link_changed(eh);
 
     if (ev) {
-        raise_zmk_split_central_status_changed((struct zmk_split_central_status_changed){
-            .slot = ev->source,
-            .connected = ev->connected,
-        });
+        prospector_peripheral_status_set(ev->source, ev->connected);
     }
 
     return ZMK_EV_EVENT_BUBBLE;

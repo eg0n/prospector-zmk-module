@@ -18,6 +18,7 @@ if(CONFIG_SHIELD_PROSPECTOR_ADAPTER)
         endif()
 
         zephyr_library_sources(src/events/split_central_status_changed.c)
+        zephyr_library_sources(src/split/peripheral_status.c)
         zephyr_library_sources(src/split/bluetooth/central_status_changed_observer.c)
         zephyr_library_sources_ifdef(CONFIG_ZMK_SPLIT_ESB_TRANSPORT
                 src/split/esb/central_status_changed_observer.c)

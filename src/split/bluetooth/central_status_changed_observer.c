@@ -19,6 +19,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/ble.h>
 
 #include <zmk/events/split_central_status_changed.h>
+#include <zmk/prospector/peripheral_status.h>
 
 enum psptr_peripheral_slot_state {
     PERIPHERAL_SLOT_STATE_OPEN,
@@ -123,10 +124,7 @@ static void split_central_process_connection(struct bt_conn *conn) {
     LOG_DBG("New connection params: Interval: %d, Latency: %d, PHY: %d", info.le.interval,
             info.le.latency, info.le.phy->rx_phy);
 
-    raise_zmk_split_central_status_changed((struct zmk_split_central_status_changed){
-        .slot = psptr_peripheral_slot_index_for_conn(conn),
-        .connected = true,
-    });
+    prospector_peripheral_status_set(psptr_peripheral_slot_index_for_conn(conn), true);
 }
 
 static void split_central_connected(struct bt_conn *conn, uint8_t conn_err) {
@@ -167,10 +165,7 @@ static void split_central_disconnected(struct bt_conn *conn, uint8_t reason) {
 
     LOG_DBG("Disconnected: %s (reason %d)", addr_str, reason);
 
-    raise_zmk_split_central_status_changed((struct zmk_split_central_status_changed){
-        .slot = psptr_peripheral_slot_index_for_conn(conn),
-        .connected = false,
-    });
+    prospector_peripheral_status_set(psptr_peripheral_slot_index_for_conn(conn), false);
 
     // k_msleep(100);
 
