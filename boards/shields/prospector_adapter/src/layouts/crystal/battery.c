@@ -94,12 +94,15 @@ void battery_update_cb(battery_state_t *unused) {
     }
 }
 
+/* Read every peripheral's level from ZMK rather than the event's, so levels
+ * that arrived before the display started are shown too. */
 void peripheral_battery_get_state(const zmk_event_t *eh) {
-    const struct zmk_peripheral_battery_state_changed *ev =
-        as_zmk_peripheral_battery_state_changed(eh);
-    uint8_t source = ev->source + SOURCE_OFFSET;
-    battery_states[source] =
-        (battery_state_t){.level = ev->state_of_charge, .usb_present = false};
+    for (uint8_t i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT; i++) {
+        uint8_t level = 0;
+        zmk_split_central_get_peripheral_battery_level(i, &level);
+        battery_states[i + SOURCE_OFFSET] =
+            (battery_state_t){.level = level, .usb_present = false};
+    }
 }
 
 void central_battery_get_state(const zmk_event_t *eh) {
@@ -115,9 +118,8 @@ void central_battery_get_state(const zmk_event_t *eh) {
 }
 
 battery_state_t *battery_get_state(const zmk_event_t *eh) {
-    if (as_zmk_peripheral_battery_state_changed(eh) != NULL)
-        peripheral_battery_get_state(eh);
-    else
+    peripheral_battery_get_state(eh);
+    if (as_zmk_peripheral_battery_state_changed(eh) == NULL)
         central_battery_get_state(eh);
     return battery_states;
 }

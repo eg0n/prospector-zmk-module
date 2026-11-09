@@ -6,6 +6,8 @@
 #include <zmk/ble.h>
 #include <zmk/events/battery_state_changed.h>
 #include <zmk/events/split_central_status_changed.h>
+#include <zmk/prospector/peripheral_status.h>
+#include <zmk/split/central.h>
 #include <zmk/event_manager.h>
 
 #include <fonts.h>
@@ -41,55 +43,36 @@ static void refresh_all_widgets(void) {
     }
 }
 
-struct battery_state {
-    uint8_t source;
-    uint8_t level;
+struct peripherals_state {
+    uint8_t level[ZMK_SPLIT_BLE_PERIPHERAL_COUNT];
+    bool connected[ZMK_SPLIT_BLE_PERIPHERAL_COUNT];
 };
 
-static void battery_update_cb(struct battery_state state) {
-    if (state.source < ZMK_SPLIT_BLE_PERIPHERAL_COUNT) {
-        battery_levels[state.source] = state.level;
-        refresh_all_widgets();
+static void peripherals_update_cb(struct peripherals_state state) {
+    for (int i = 0; i < ZMK_SPLIT_BLE_PERIPHERAL_COUNT; i++) {
+        battery_levels[i] = state.level[i];
+        connected[i] = state.connected[i];
     }
+    refresh_all_widgets();
 }
 
-static struct battery_state get_battery_state(const zmk_event_t *eh) {
-    const struct zmk_peripheral_battery_state_changed *ev =
-        as_zmk_peripheral_battery_state_changed(eh);
-    if (ev) {
-        return (struct battery_state){.source = ev->source, .level = ev->state_of_charge};
+/* Snapshot every peripheral: the display listener keeps one pending state,
+ * so of two events close together only the last would be drawn. */
+static struct peripherals_state get_peripherals_state(const zmk_event_t *eh) {
+    struct peripherals_state state = {0};
+
+    for (uint8_t i = 0; i < ZMK_SPLIT_BLE_PERIPHERAL_COUNT; i++) {
+        zmk_split_central_get_peripheral_battery_level(i, &state.level[i]);
+        state.connected[i] = prospector_peripheral_connected(i);
     }
-    return (struct battery_state){.source = 0, .level = 0};
+
+    return state;
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_battery_label_battery, struct battery_state,
-                            battery_update_cb, get_battery_state);
-ZMK_SUBSCRIPTION(widget_battery_label_battery, zmk_peripheral_battery_state_changed);
-
-struct connection_state {
-    uint8_t source;
-    bool connected;
-};
-
-static void connection_update_cb(struct connection_state state) {
-    if (state.source < ZMK_SPLIT_BLE_PERIPHERAL_COUNT) {
-        connected[state.source] = state.connected;
-        refresh_all_widgets();
-    }
-}
-
-static struct connection_state get_connection_state(const zmk_event_t *eh) {
-    const struct zmk_split_central_status_changed *ev =
-        as_zmk_split_central_status_changed(eh);
-    if (ev) {
-        return (struct connection_state){.source = ev->slot, .connected = ev->connected};
-    }
-    return (struct connection_state){.source = 0, .connected = false};
-}
-
-ZMK_DISPLAY_WIDGET_LISTENER(widget_battery_label_connection, struct connection_state,
-                            connection_update_cb, get_connection_state);
-ZMK_SUBSCRIPTION(widget_battery_label_connection, zmk_split_central_status_changed);
+ZMK_DISPLAY_WIDGET_LISTENER(widget_battery_label_peripherals, struct peripherals_state,
+                            peripherals_update_cb, get_peripherals_state);
+ZMK_SUBSCRIPTION(widget_battery_label_peripherals, zmk_peripheral_battery_state_changed);
+ZMK_SUBSCRIPTION(widget_battery_label_peripherals, zmk_split_central_status_changed);
 
 int zmk_widget_battery_label_init(struct zmk_widget_battery_label *widget, lv_obj_t *parent) {
     widget->obj = lv_label_create(parent);
@@ -106,8 +89,7 @@ int zmk_widget_battery_label_init(struct zmk_widget_battery_label *widget, lv_ob
 
     sys_slist_append(&widgets, &widget->node);
 
-    widget_battery_label_battery_init();
-    widget_battery_label_connection_init();
+    widget_battery_label_peripherals_init();
 
     update_label_text(widget->obj);
 
