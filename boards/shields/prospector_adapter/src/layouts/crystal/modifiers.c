@@ -61,7 +61,8 @@ static struct mods_state_t modifiers_get_state(const zmk_event_t *eh) {
     const struct zmk_keycode_state_changed *kc_ev =
         as_zmk_keycode_state_changed(eh);
     if (kc_ev != NULL && kc_ev->state &&
-        ZMK_HID_USAGE(kc_ev->usage_page, kc_ev->keycode) == CAPSLOCK) {
+        kc_ev->usage_page == HID_USAGE_KEY &&
+        kc_ev->keycode == HID_USAGE_KEY_KEYBOARD_CAPS_LOCK) {
         mods_state.caps_lock_active = !mods_state.caps_lock_active;
     }
 
