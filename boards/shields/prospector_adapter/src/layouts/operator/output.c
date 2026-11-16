@@ -53,11 +53,27 @@ static void set_ble_btn_state(lv_obj_t *btn, bool active) {
     }
 }
 
-static void set_slot_active(lv_obj_t *slot, bool active) {
-    if (active) {
-        lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_ACTIVE_BG), LV_PART_MAIN);
+/* A paired profile is filled. One with nothing paired (open) is only an outline, grey, or in the
+ * active colour while it is selected and waiting to pair, as in the KeyBeacon Mac app. */
+static void set_slot_state(lv_obj_t *slot, bool active, bool open) {
+    lv_obj_t *label = lv_obj_get_child(slot, 0);
+    if (open) {
+        lv_color_t color = lv_color_hex(active ? DISPLAY_COLOR_SLOT_ACTIVE_BG : DISPLAY_COLOR_SLOT_EMPTY);
+        lv_obj_set_style_bg_opa(slot, LV_OPA_TRANSP, LV_PART_MAIN);
+        lv_obj_set_style_border_width(slot, 2, LV_PART_MAIN);
+        lv_obj_set_style_border_color(slot, color, LV_PART_MAIN);
+        if (label) {
+            lv_obj_set_style_text_color(label, color, LV_PART_MAIN);
+        }
     } else {
-        lv_obj_set_style_bg_color(slot, lv_color_hex(DISPLAY_COLOR_SLOT_INACTIVE_BG), LV_PART_MAIN);
+        lv_obj_set_style_bg_color(
+            slot, lv_color_hex(active ? DISPLAY_COLOR_SLOT_ACTIVE_BG : DISPLAY_COLOR_SLOT_INACTIVE_BG),
+            LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(slot, LV_OPA_COVER, LV_PART_MAIN);
+        lv_obj_set_style_border_width(slot, 0, LV_PART_MAIN);
+        if (label) {
+            lv_obj_set_style_text_color(label, lv_color_hex(0x000000), LV_PART_MAIN);
+        }
     }
 }
 
@@ -66,8 +82,9 @@ static void update_output_widget(struct zmk_widget_output *widget) {
     set_usb_btn_state(widget->usb_btn, is_usb);
     set_ble_btn_state(widget->ble_btn, !is_usb);
 
+    /* Pairing or clearing a profile raises zmk_ble_active_profile_changed, which redraws this. */
     for (int i = 0; i < ZMK_BLE_PROFILE_COUNT; i++) {
-        set_slot_active(widget->slots[i], (i == active_profile_index));
+        set_slot_state(widget->slots[i], i == active_profile_index, zmk_ble_profile_is_open(i));
     }
 }
 
