@@ -8,6 +8,7 @@
 #include <zmk/event_manager.h>
 #include <zmk/hid.h>
 
+#include <caps_lock.h>
 #include <fonts.h>
 #include <modifier_order.h>
 #include "display_colors.h"
@@ -16,6 +17,7 @@ static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
 struct modifier_indicator_state {
     bool mods[4];
+    bool caps_lock;
 #ifdef CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED
     bool caps_word;
 #endif
@@ -36,6 +38,11 @@ static void modifier_indicator_update_cb(struct modifier_indicator_state state) 
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
         for (int i = 0; i < 4; i++) {
             enum modifier_type type = modifier_order_get(i);
+            if (type == MOD_TYPE_SHIFT && state.caps_lock) {
+                lv_obj_set_style_text_color(widget->mod_labels[i],
+                    lv_color_hex(PROSPECTOR_CAPS_LOCK_COLOR), 0);
+                continue;
+            }
 #ifdef CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED
             if (type == MOD_TYPE_SHIFT && state.caps_word) {
                 lv_obj_set_style_text_color(widget->mod_labels[i],
@@ -62,6 +69,7 @@ static struct modifier_indicator_state modifier_indicator_get_state(const zmk_ev
 
     struct modifier_indicator_state state = {
         .mods = {false, false, false, false},
+        .caps_lock = prospector_caps_lock_active(),
 #ifdef CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED
         .caps_word = caps_word_active,
 #endif
@@ -78,6 +86,9 @@ static struct modifier_indicator_state modifier_indicator_get_state(const zmk_ev
 ZMK_DISPLAY_WIDGET_LISTENER(widget_modifier_indicator, struct modifier_indicator_state,
                             modifier_indicator_update_cb, modifier_indicator_get_state)
 ZMK_SUBSCRIPTION(widget_modifier_indicator, zmk_keycode_state_changed);
+#if IS_ENABLED(CONFIG_ZMK_HID_INDICATORS)
+ZMK_SUBSCRIPTION(widget_modifier_indicator, zmk_hid_indicators_changed);
+#endif
 
 #ifdef CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED
 ZMK_SUBSCRIPTION(widget_modifier_indicator, zmk_caps_word_state_changed);

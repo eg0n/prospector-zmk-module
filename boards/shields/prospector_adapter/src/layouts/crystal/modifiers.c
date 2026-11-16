@@ -1,4 +1,5 @@
 #include "modifiers.h"
+#include <caps_lock.h>
 #include <fonts.h>
 #include <lvgl.h>
 #include <material_32.h>
@@ -58,13 +59,9 @@ static struct mods_state_t modifiers_get_state(const zmk_event_t *eh) {
         mods_state.caps_word_active = cw_ev->active;
     }
 
-    const struct zmk_keycode_state_changed *kc_ev =
-        as_zmk_keycode_state_changed(eh);
-    if (kc_ev != NULL && kc_ev->state &&
-        kc_ev->usage_page == HID_USAGE_KEY &&
-        kc_ev->keycode == HID_USAGE_KEY_KEYBOARD_CAPS_LOCK) {
-        mods_state.caps_lock_active = !mods_state.caps_lock_active;
-    }
+    /* The host's LED, so it can't drift from presses it never saw (another
+     * keyboard, a reconnect, a different output). */
+    mods_state.caps_lock_active = prospector_caps_lock_active();
 
     /* Read the live report on every event. The dongle-screen original only did
      * this for zmk_modifiers_state_changed, which its ZMK fork raised from
@@ -77,6 +74,9 @@ ZMK_DISPLAY_WIDGET_LISTENER(widget_modifiers, struct mods_state_t,
                             modifiers_update_cb, modifiers_get_state)
 ZMK_SUBSCRIPTION(widget_modifiers, zmk_caps_word_state_changed);
 ZMK_SUBSCRIPTION(widget_modifiers, zmk_keycode_state_changed);
+#if IS_ENABLED(CONFIG_ZMK_HID_INDICATORS)
+ZMK_SUBSCRIPTION(widget_modifiers, zmk_hid_indicators_changed);
+#endif
 
 int zmk_widget_modifiers_init(struct zmk_widget_modifiers *widget,
                               lv_obj_t *parent) {

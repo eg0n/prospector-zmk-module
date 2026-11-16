@@ -12,6 +12,7 @@
 #include <dt-bindings/zmk/hid_usage_pages.h>
 
 #include <fonts.h>
+#include <caps_lock.h>
 #include <symbols.h>
 #include <modifier_order.h>
 
@@ -32,6 +33,7 @@ static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
 struct modifier_state {
     bool mods[4];
+    bool caps_lock;
 #ifdef CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED
     bool caps_word;
 #endif
@@ -105,6 +107,15 @@ static void modifier_update_cb(struct modifier_state state) {
             enum modifier_type type = modifier_order_get(i);
             bool active = state.mods[type];
             bool is_win_icon = is_windows && type == MOD_TYPE_GUI;
+            if (type == MOD_TYPE_SHIFT && state.caps_lock) {
+                if (modifier_order_uses_symbols()) {
+                    lv_label_set_text(widget->mod_labels[i], SYMBOL_CAPS_LOCK);
+                }
+                set_modifier_visible(widget->mod_labels[i], grid_rows[i], true, false);
+                lv_obj_set_style_text_color(widget->mod_labels[i],
+                                            lv_color_hex(PROSPECTOR_CAPS_LOCK_COLOR), LV_PART_MAIN);
+                continue;
+            }
 #ifdef CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED
             if (type == MOD_TYPE_SHIFT) {
                 if (state.caps_word) {
@@ -116,6 +127,10 @@ static void modifier_update_cb(struct modifier_state state) {
                 } else if (modifier_order_uses_symbols()) {
                     lv_label_set_text(widget->mod_labels[i], SYMBOL_SHIFT);
                 }
+            }
+#else
+            if (type == MOD_TYPE_SHIFT && modifier_order_uses_symbols()) {
+                lv_label_set_text(widget->mod_labels[i], SYMBOL_SHIFT);
             }
 #endif
             set_modifier_visible(widget->mod_labels[i], grid_rows[i], active, is_win_icon);
@@ -135,6 +150,7 @@ static struct modifier_state modifier_indicator_get_state(const zmk_event_t *eh)
 
     struct modifier_state state = {
         .mods = {false, false, false, false},
+        .caps_lock = prospector_caps_lock_active(),
 #ifdef CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED
         .caps_word = caps_word_active,
 #endif
@@ -152,6 +168,9 @@ static struct modifier_state modifier_indicator_get_state(const zmk_event_t *eh)
 ZMK_DISPLAY_WIDGET_LISTENER(widget_modifier_indicator, struct modifier_state,
                             modifier_update_cb, modifier_indicator_get_state)
 ZMK_SUBSCRIPTION(widget_modifier_indicator, zmk_keycode_state_changed);
+#if IS_ENABLED(CONFIG_ZMK_HID_INDICATORS)
+ZMK_SUBSCRIPTION(widget_modifier_indicator, zmk_hid_indicators_changed);
+#endif
 
 #ifdef CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED
 ZMK_SUBSCRIPTION(widget_modifier_indicator, zmk_caps_word_state_changed);

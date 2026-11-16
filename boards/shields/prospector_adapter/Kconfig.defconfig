@@ -3,6 +3,10 @@ if SHIELD_PROSPECTOR_ADAPTER
 config ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING
     default y
 
+# The layouts show the host's Caps Lock (include/caps_lock.h).
+config ZMK_HID_INDICATORS
+    default y
+
 config ZMK_DISPLAY
    default y
 
